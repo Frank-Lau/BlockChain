@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"crypto/sha256"
 )
 
 //1. 定义结构（区块头的字段比正常的少）
@@ -16,8 +15,6 @@ import (
 //5. 添加区块
 //6. 重构代码
 
-
-
 func main() {
 	fmt.Printf("helloworld\n")
 
@@ -27,13 +24,13 @@ func main() {
 
 	bc.AddBlcok("老王来了")
 
-	for i,block := range bc.Blocks{
-		fmt.Printf("+++++++++++++++++++++++%d+++++++++++++++++++++++++++\n",i)
+	bc.AddBlcok("老王走了")
+
+	for i, block := range bc.Blocks {
+		fmt.Printf("+++++++++++++++++++++++%d+++++++++++++++++++++++++++\n", i)
 		fmt.Printf("PrevBlockHash : %x\n", block.PrevBlockHash)
 		fmt.Printf("Hash : %x\n", block.Hash)
 		fmt.Printf("Data : %s\n", block.Data)
 	}
 
-
 }
-
