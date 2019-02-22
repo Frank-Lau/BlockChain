@@ -1,9 +1,7 @@
 package main
 
 import (
-	"crypto/sha256"
 	"time"
-	"bytes"
 )
 
 const genesisInfo = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
@@ -32,14 +30,20 @@ func NewBlock(data string, prevBlockHash []byte) *Block {
 		Hash:          []byte{}, //先填充为空，后续会填充数据
 	}
 	//调用setHash生成哈希值
-	block.setHash()
-
+	//block.setHash()
+	pow := NewProofOfWork(&block)
+	hash, nonce := pow.Run()
+	block.Hash = hash
+	block.Nonce = nonce
 	return &block
 }
 
+//v1版本中的此函数已在pow函数中实现,所以注释掉
+/*
 //实现setHash函数,我们实现一个简单的函数,来计算哈希子,没有随机数,没有难度值
 func (block *Block) setHash() {
-	/*var data []byte
+	*/
+/*var data []byte
 
 	//uintToByte将数字转化为[]byte{},在utils中实现
 	data = append(data, uintToByte(block.Version)...)
@@ -48,7 +52,8 @@ func (block *Block) setHash() {
 	data = append(data, uintToByte(block.TimeStamp)...)
 	data = append(data, uintToByte(block.Difficulity)...)
 	data = append(data, uintToByte(block.Nonce)...)
-	data = append(data, block.Data...)*/
+	data = append(data, block.Data...)*//*
+
 
 
 	//使用byte.join改写setHash
@@ -61,9 +66,12 @@ func (block *Block) setHash() {
 		uintToByte(block.Nonce),
 		block.Data,
 	}
-
+	//传入一个二位切片,以一个以为切片进行分割,并返回一个一维切片
 	data  :=bytes.Join(tmp,[]byte{})
 
-	hash /*[32]byte*/ := sha256.Sum256(data)
+	hash */
+/*[32]byte*//*
+ := sha256.Sum256(data)
 	block.Hash = hash[:]
 }
+*/
