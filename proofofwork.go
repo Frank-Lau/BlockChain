@@ -30,20 +30,38 @@ type ProofOfWork struct {
 }
 
 //2.提供创建POW的函数
+const Bits  =16
 func NewProofOfWork(block *Block) *ProofOfWork {
 	pow := ProofOfWork{
 		block: block,
 	}
 
-	//写难度值,难度值应该是推导出来的,但是我们为了简化,把难度值先写成固定的,一切完成之后,再去推到
-	// 0000100000000000000000000000000000000000000000000000000000000000
 
+	/*//写难度值,难度值应该是推导出来的,但是我们为了简化,把难度值先写成固定的,一切完成之后,再去推到
+	// 0000100000000000000000000000000000000000000000000000000000000000
 	//16制格式的字符串转化成big.int类型
 	targetStr := "0000100000000000000000000000000000000000000000000000000000000000"
 	var bigIntTmp big.Int
-	bigIntTmp.SetString(targetStr, 16)
+	bigIntTmp.SetString(targetStr, 16)*/
 
-	pow.target = &bigIntTmp
+
+	//使用程序来推导难度值,推导前导另为三个的难度值
+	//
+	//0001000000000000000000000000000000000000000000000000000000000000
+	//初始化
+	//0001000000000000000000000000000000000000000000000000000000000001
+	//将1向左移动256位
+	//1 0000000000000000000000000000000000000000000000000000000000000000
+	//向右移动四次,一个16禁止位代表4个2进制为(发:1111)
+	//0 0001000000000000000000000000000000000000000000000000000000000000
+
+	bigIntTmp := big.NewInt(1)
+	//bigIntTmp.Lsh(bigIntTmp,256)
+	//bigIntTmp.Rsh(bigIntTmp,16)
+	bigIntTmp.Lsh(bigIntTmp,256-Bits)
+
+
+	pow.target = bigIntTmp
 
 	return &pow
 }
@@ -99,3 +117,29 @@ func (pow *ProofOfWork) prepareData(nonce uint64) []byte {
 	data := bytes.Join(tmp, []byte{})
 	return data
 }
+
+//检验挖矿是否有效函数IsValid
+func (pow *ProofOfWork)IsValid()bool{
+	//在校验的时候,block的数据是完整的,我们要做的就是检查一下,hash,block数据和Nonce是否满足难度值要求
+
+	//获取区块数据
+	//拼接nonce
+	//做sha256
+
+	data :=pow.prepareData(pow.block.Nonce)
+	hash := sha256.Sum256(data)
+
+	var tmp big.Int
+	tmp.SetBytes(hash[:])
+
+	//if tmp.Cmp(pow.target)==-1{
+	//	return true
+	//}else {
+	//	return false
+	//}
+
+	return tmp.Cmp(pow.target)==-1
+
+}
+
+
