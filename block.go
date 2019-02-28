@@ -24,7 +24,7 @@ func NewBlock(data string, prevBlockHash []byte) *Block {
 		PrevBlockHash: prevBlockHash,
 		MerKleRoot:    []byte{},
 		TimeStamp:     uint64(time.Now().Unix()),
-		Difficulity:   10, //随便写的,v2在调整
+		Difficulity:   Bits, //随便写的,v2在调整
 		//Nonce:         10, //同difficulity
 		Data:          []byte(data),
 		Hash:          []byte{}, //先填充为空，后续会填充数据
