@@ -3,8 +3,7 @@ package main
 import (
 	"fmt"
 
-	"time"
-	"bytes"
+
 
 )
 
@@ -25,7 +24,9 @@ func main() {
 	//block := NewBlock(genesisInfo, []byte{0x0000000000000000})
 	bc := NewBlockChain()
 	defer bc.db.Close()
-	bc.AddBlock("hello itcast!!!")
+	cli := CLI{bc}
+	cli.Run()
+/*	bc.AddBlock("hello itcast!!!")
 
 	it := bc.NewIterator()
 
@@ -52,5 +53,5 @@ func main() {
 			fmt.Printf("区块链遍历结束!\n")
 			break
 		}
-	}
+	}*/
 }
