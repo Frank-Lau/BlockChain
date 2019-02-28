@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 
+	"time"
+	"bytes"
+
 )
 
 //1. 定义结构（区块头的字段比正常的少）
@@ -20,16 +23,16 @@ func main() {
 	fmt.Printf("helloworld\n")
 
 	//block := NewBlock(genesisInfo, []byte{0x0000000000000000})
-
 	bc := NewBlockChain()
 	defer bc.db.Close()
+	bc.AddBlock("hello itcast!!!")
 
-	bc.AddBlcok("I need you")
+	it := bc.NewIterator()
 
-	bc.AddBlcok("range bc.Blocks")
+	for {
+		block := it.Next()
+		fmt.Printf("++++++++++++++++++++++++++++++++\n")
 
-	/*for i, block := range bc.Blocks {
-		fmt.Printf("+++++++++++++++ %d ++++++++++++++\n", i)
 		fmt.Printf("Version : %d\n", block.Version)
 		fmt.Printf("PrevBlockHash : %x\n", block.PrevBlockHash)
 		fmt.Printf("MerKleRoot : %x\n", block.MerKleRoot)
@@ -44,6 +47,10 @@ func main() {
 
 		pow := NewProofOfWork(block)
 		fmt.Printf("IsValid: %v\n", pow.IsValid())
-	}*/
 
+		if bytes.Equal(block.PrevBlockHash, []byte{}) {
+			fmt.Printf("区块链遍历结束!\n")
+			break
+		}
+	}
 }

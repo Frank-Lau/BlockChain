@@ -4,6 +4,7 @@ import (
 	"github.com/bolt"
 	"log"
 	"fmt"
+	"os"
 )
 
 //区块链的定义及遍历打印
@@ -69,7 +70,7 @@ func NewBlockChain() *BlockChain {
 }
 
 //添加区块
-func (bc *BlockChain) AddBlcok(data string) {
+func (bc *BlockChain) AddBlock(data string) {
 	//1. 创建一个区块
 	bc.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blockBucketName))
@@ -87,4 +88,39 @@ func (bc *BlockChain) AddBlcok(data string) {
 
 		return nil
 	})
+}
+//定义一个区块链的迭代器，包含db，current,跟数组和切片相反,是从后往前遍历
+type BlockChainIterator struct {
+	db      *bolt.DB
+	current []byte //当前所指向区块的哈希值
+}
+
+//创建迭代器，使用bc进行初始化
+
+func (bc *BlockChain) NewIterator() *BlockChainIterator {
+	return &BlockChainIterator{bc.db, bc.tail}
+}
+//实现next函数,功能一,返回当前区块数据,current前移
+func (it *BlockChainIterator) Next() *Block {
+
+	var block Block
+
+	it.db.View(func(tx *bolt.Tx) error {
+
+		b := tx.Bucket([]byte(blockBucketName))
+		if b == nil {
+			fmt.Printf("bucket不存在，请检查!\n")
+			os.Exit(1)
+		}
+
+		//真正的读取数据
+		blockInfo /*block的字节流*/ := b.Get(it.current)
+		block = *Deserialize(blockInfo)
+
+		it.current = block.PrevBlockHash
+
+		return nil
+	})
+
+	return &block
 }
