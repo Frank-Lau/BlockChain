@@ -2,6 +2,10 @@ package main
 
 import (
 	"time"
+	"encoding/gob"
+	"bytes"
+	"fmt"
+	"log"
 )
 
 const genesisInfo = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
@@ -38,40 +42,36 @@ func NewBlock(data string, prevBlockHash []byte) *Block {
 	return &block
 }
 
-//v1版本中的此函数已在pow函数中实现,所以注释掉
-/*
-//实现setHash函数,我们实现一个简单的函数,来计算哈希子,没有随机数,没有难度值
-func (block *Block) setHash() {
-	*/
-/*var data []byte
+//序列化, 将区块转换成字节流
+func (block *Block) Serialize() []byte {
 
-	//uintToByte将数字转化为[]byte{},在utils中实现
-	data = append(data, uintToByte(block.Version)...)
-	data = append(data, block.PrevBlockHash...)
-	data = append(data, block.MerKleRoot...)
-	data = append(data, uintToByte(block.TimeStamp)...)
-	data = append(data, uintToByte(block.Difficulity)...)
-	data = append(data, uintToByte(block.Nonce)...)
-	data = append(data, block.Data...)*//*
+	var buffer bytes.Buffer
 
+	//定义编码器
+	encoder := gob.NewEncoder(&buffer)
 
-
-	//使用byte.join改写setHash
-	tmp := [][]byte{
-		uintToByte(block.Version),
-		block.PrevBlockHash,
-		block.MerKleRoot,
-		uintToByte(block.TimeStamp),
-		uintToByte(block.Difficulity),
-		uintToByte(block.Nonce),
-		block.Data,
+	//编码器对结构进行编码，一定要进行校验
+	err := encoder.Encode(block)
+	if err != nil {
+		log.Panic(err)
 	}
-	//传入一个二位切片,以一个以为切片进行分割,并返回一个一维切片
-	data  :=bytes.Join(tmp,[]byte{})
 
-	hash */
-/*[32]byte*//*
- := sha256.Sum256(data)
-	block.Hash = hash[:]
+	return buffer.Bytes()
 }
-*/
+
+func Deserialize(data []byte) *Block {
+
+	fmt.Printf("解码传入的数据: %x\n", data)
+
+	var block Block
+
+	//创建解码器
+	decoder := gob.NewDecoder(bytes.NewReader(data))
+	err := decoder.Decode(&block)
+
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return &block
+}

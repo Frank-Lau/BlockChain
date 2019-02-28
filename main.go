@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"time"
+
 )
 
 //1. 定义结构（区块头的字段比正常的少）
@@ -22,12 +22,13 @@ func main() {
 	//block := NewBlock(genesisInfo, []byte{0x0000000000000000})
 
 	bc := NewBlockChain()
+	defer bc.db.Close()
 
-	bc.AddBlcok("老王来了")
+	bc.AddBlcok("I need you")
 
-	bc.AddBlcok("老王走了")
+	bc.AddBlcok("range bc.Blocks")
 
-	for i, block := range bc.Blocks {
+	/*for i, block := range bc.Blocks {
 		fmt.Printf("+++++++++++++++ %d ++++++++++++++\n", i)
 		fmt.Printf("Version : %d\n", block.Version)
 		fmt.Printf("PrevBlockHash : %x\n", block.PrevBlockHash)
@@ -43,6 +44,6 @@ func main() {
 
 		pow := NewProofOfWork(block)
 		fmt.Printf("IsValid: %v\n", pow.IsValid())
-	}
+	}*/
 
 }
