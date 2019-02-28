@@ -63,6 +63,7 @@ func NewProofOfWork(block *Block) *ProofOfWork {
 
 	pow.target = bigIntTmp
 
+
 	return &pow
 }
 
