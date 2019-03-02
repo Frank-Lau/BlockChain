@@ -1,20 +1,15 @@
 package main
 
 import (
-	"github.com/bolt"
+	"./bolt"
 	"log"
 	"fmt"
 	"os"
 )
 
-//区块链的定义及遍历打印
-
-////创建区块链,使用Block切片模拟
-//type BlockChain struct {
-//	Blocks []*Block
-//}
-
-//使用bolt数据库进行持久化存储
+//使用bolt进行改写，需要两个字段：
+//1. bolt数据库的句柄
+//2. 最后一个区块的哈希值
 type BlockChain struct {
 	db   *bolt.DB //句柄
 	tail []byte   //最后一个区块的哈希值
@@ -25,7 +20,8 @@ const blockBucketName = "blockBucket"
 const lastHashKey = "lastHashKey"
 
 //实现创建区块链的方法
-func NewBlockChain() *BlockChain {
+func NewBlockChain(miner string) *BlockChain {
+
 	//功能分析：
 	//1. 获得数据库的句柄，打开数据库，读写数据
 
@@ -37,7 +33,7 @@ func NewBlockChain() *BlockChain {
 		log.Panic(err)
 	}
 
-	//defer db.Close()不能关闭,因为后面要使用
+	//defer db.Close()
 
 	var tail []byte
 
@@ -54,9 +50,17 @@ func NewBlockChain() *BlockChain {
 			}
 
 			//抽屉准备完毕，开始添加创世块
-			genesisBlock := NewBlock(genesisInfo, []byte{})
+			//创世块中只有一个挖矿交易，只有Coinbase
+			coinbase := NewCoinbaseTx(miner, genesisInfo)
+			genesisBlock := NewBlock([]*Transaction{coinbase}, []byte{})
+
 			b.Put(genesisBlock.Hash, genesisBlock.Serialize() /*将区块序列化，转成字节流*/)
 			b.Put([]byte(lastHashKey), genesisBlock.Hash)
+
+			//为了测试，我们把写入的数据读取出来，如果没问题，注释掉这段代码
+			//blockInfo := b.Get(genesisBlock.Hash)
+			//block := Deserialize(blockInfo)
+			//fmt.Printf("解码后的block数据:%s\n", block)
 
 			tail = genesisBlock.Hash
 		} else {
@@ -70,17 +74,17 @@ func NewBlockChain() *BlockChain {
 }
 
 //添加区块
-func (bc *BlockChain) AddBlock(data string) {
+func (bc *BlockChain) AddBlock(txs []*Transaction) {
 	//1. 创建一个区块
 	bc.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blockBucketName))
 
 		if b == nil {
 			fmt.Printf("bucket不存在，请检查!\n")
-			log.Panic()
+			os.Exit(1)
 		}
 
-		block := NewBlock(data, bc.tail)
+		block := NewBlock(txs, bc.tail)
 		b.Put(block.Hash, block.Serialize() /*将区块序列化，转成字节流*/)
 		b.Put([]byte(lastHashKey), block.Hash)
 
@@ -89,7 +93,8 @@ func (bc *BlockChain) AddBlock(data string) {
 		return nil
 	})
 }
-//定义一个区块链的迭代器，包含db，current,跟数组和切片相反,是从后往前遍历
+
+//定义一个区块链的迭代器，包含db，current
 type BlockChainIterator struct {
 	db      *bolt.DB
 	current []byte //当前所指向区块的哈希值
@@ -100,7 +105,7 @@ type BlockChainIterator struct {
 func (bc *BlockChain) NewIterator() *BlockChainIterator {
 	return &BlockChainIterator{bc.db, bc.tail}
 }
-//实现next函数,功能一,返回当前区块数据,current前移
+
 func (it *BlockChainIterator) Next() *Block {
 
 	var block Block
@@ -123,4 +128,160 @@ func (it *BlockChainIterator) Next() *Block {
 	})
 
 	return &block
+}
+
+//实现思路：
+//
+
+func (bc *BlockChain) FindMyUtoxs(address string) []TXOutput {
+	fmt.Printf("FindMyUtoxs\n")
+	var UTXOs []TXOutput //返回的结构
+
+	it := bc.NewIterator()
+
+	//这是标识已经消耗过的utxo的结构，key是交易id，value是这个id里面的output索引的数组
+	spentUTXOs := make(map[string][]int64)
+
+	//1. 遍历账本
+	for {
+
+		block := it.Next()
+
+		//2. 遍历交易
+		for _, tx := range block.Transactions {
+			//遍历交易输入:inputs
+
+			for _, input := range tx.TXInputs {
+				if input.Address == address {
+					fmt.Printf("找到了消耗过的output! index : %d\n", input.Index)
+					key := string(input.TXID)
+					spentUTXOs[key] = append(spentUTXOs[key], input.Index)
+					//spentUTXOs[0x222] = []int64{0}
+					//spentUTXOs[0x333] = []int64{0}  //中间状态
+					//spentUTXOs[0x333] = []int64{0, 1}
+				}
+			}
+
+			key := string(tx.TXid)
+			indexes /*[]int64{0,1}*/ := spentUTXOs[key]
+
+		OUTPUT:
+		//3. 遍历output
+			for i, output := range tx.TXOutputs {
+
+				if len(indexes) != 0 {
+					fmt.Printf("当前这笔交易中有被消耗过的output!\n")
+					for _, j /*0, 1*/ := range indexes {
+						if int64(i) == j {
+							fmt.Printf("i == j, 当前的output已经被消耗过了，跳过不统计!\n")
+							continue OUTPUT
+						}
+					}
+				}
+
+				//4. 找到属于我的所有output
+				if address == output.Address {
+					fmt.Printf("找到了属于 %s 的output, i : %d\n", address, i)
+					UTXOs = append(UTXOs, output)
+				}
+			}
+		}
+
+		if len(block.PrevBlockHash) == 0 {
+			fmt.Printf("遍历区块链结束!\n")
+			break
+		}
+	}
+
+	return UTXOs
+}
+
+func (bc *BlockChain) GetBalance(address string) {
+	utxos := bc.FindMyUtoxs(address)
+
+	var total = 0.0
+
+	for _, utxo := range utxos {
+		total += utxo.Value //10, 3, 1
+	}
+
+	fmt.Printf("%s 的余额为: %f\n", address, total)
+}
+
+//1. 遍历账本，找到属于付款人的合适的金额，把这个outputs找到
+//utxos, resValue = bc.FindNeedUtxos(from, amount)
+func (bc *BlockChain) FindNeedUtxos(from string, amount float64) (map[string][]int64, float64) {
+
+	needUtxos := make(map[string][]int64) //标识能用的utxo, //返回的结构
+	var resValue float64                  //统计的金额
+
+	it := bc.NewIterator()
+
+	//这是标识已经消耗过的utxo的结构，key是交易id，value是这个id里面的output索引的数组
+	spentUTXOs := make(map[string][]int64)
+
+	//1. 遍历账本
+	for {
+
+		block := it.Next()
+
+		//2. 遍历交易
+		for _, tx := range block.Transactions {
+			//遍历交易输入:inputs
+
+			for _, input := range tx.TXInputs {
+				if input.Address == from {
+					fmt.Printf("找到了消耗过的output! index : %d\n", input.Index)
+					key := string(input.TXID)
+					spentUTXOs[key] = append(spentUTXOs[key], input.Index)
+					//spentUTXOs[0x222] = []int64{0}
+					//spentUTXOs[0x333] = []int64{0}  //中间状态
+					//spentUTXOs[0x333] = []int64{0, 1}
+				}
+			}
+
+			key := string(tx.TXid)
+			indexes /*[]int64{0,1}*/ := spentUTXOs[key]
+
+		OUTPUT:
+		//3. 遍历output
+			for i, output := range tx.TXOutputs {
+
+				if len(indexes) != 0 {
+					fmt.Printf("当前这笔交易中有被消耗过的output!\n")
+					for _, j /*0, 1*/ := range indexes {
+						if int64(i) == j {
+							fmt.Printf("i == j, 当前的output已经被消耗过了，跳过不统计!\n")
+							continue OUTPUT
+						}
+					}
+				}
+
+				//4. 找到属于我的所有output
+				if from == output.Address {
+					fmt.Printf("找到了属于 %s 的output, i : %d\n", from, i)
+					//UTXOs = append(UTXOs, output)
+					//在这里实现控制逻辑
+					//找到符合条件的output
+					//1. 添加到返回结构中needUtxos
+					needUtxos[key] = append(needUtxos[key], int64(i))
+					resValue += output.Value
+
+					//2. 判断一下金额是否足够
+					if resValue >= amount {
+						//a. 足够， 直接返回
+						return needUtxos, resValue
+					}
+					//b. 不足， 继续遍历
+				}
+			}
+		}
+
+		if len(block.PrevBlockHash) == 0 {
+			fmt.Printf("遍历区块链结束!\n")
+			break
+		}
+	}
+
+	return needUtxos, resValue
 }

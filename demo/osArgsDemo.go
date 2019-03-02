@@ -5,10 +5,10 @@ import (
 	"fmt"
 )
 
-func main(){
-	cmds :=os.Args
-	for i,cmd:=range cmds{
-		fmt.Printf("cmd[%d]:%s\n:",i,cmd)
+func main() {
+	cmds := os.Args
 
+	for i, cmd := range cmds {
+		fmt.Printf("cmd[%d] : %s\n", i, cmd)
 	}
 }

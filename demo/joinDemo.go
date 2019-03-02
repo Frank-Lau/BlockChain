@@ -7,13 +7,13 @@ import (
 )
 
 func main() {
-	strsA := []string{"hello", "world", "golang"}
+	strsA := []string{"hello", "world", "itcast"}
 
 	strRes := strings.Join(strsA, "=")
-	fmt.Printf("strRes:%s\n", strRes)
+	fmt.Printf("strRes : %s\n", strRes)
 
-	//func Join(s [][]byte, sep []byte) []byte {将二位切片用特定符号链接并返回一个以为切片
-	joinRes := bytes.Join([][]byte{[]byte("hello"), []byte("world"), []byte("golang")}, []byte{})
+	//func Join(s [][]byte, sep []byte) []byte {
+	joinRes := bytes.Join([][]byte{[]byte("hello"), []byte("world"), []byte("itcast")}, []byte{})
+	fmt.Printf("joinRes: %s\n", joinRes)
 
-	fmt.Printf("joinRes:%s\n", joinRes)
 }

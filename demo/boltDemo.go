@@ -1,11 +1,10 @@
 package main
 
 import (
+	"../bolt"
 	"log"
 	"fmt"
-	"github.com/bolt"
 )
-
 
 func main() {
 	db, err := bolt.Open("test.db", 0600, nil)
@@ -25,6 +24,7 @@ func main() {
 
 		if b1 == nil {
 			//如果b1为空，说明名字为"buckeName1"这个桶不存在，我们需要创建之
+			fmt.Printf("bucket不存在，准备创建!\n")
 			b1, err = tx.CreateBucket([]byte("bucketName1"))
 
 			if err != nil {
@@ -34,12 +34,12 @@ func main() {
 
 		//bucket已经创建完成，准备写入数据
 		//写数据使用Put，读数据使用Get
-		err = b1.Put([]byte("name1"), []byte("Lily"))
+		err = b1.Put([]byte("name1"), []byte("Lily1111"))
 		if err != nil {
 			fmt.Printf("写入数据失败name1 : Lily!\n")
 		}
 
-		err = b1.Put([]byte("name2"), []byte("Jim"))
+		err = b1.Put([]byte("name2"), []byte("Jim1111"))
 		if err != nil {
 			fmt.Printf("写入数据失败name2 : Jim!\n")
 		}
@@ -59,4 +59,3 @@ func main() {
 	})
 
 }
-
