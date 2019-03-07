@@ -26,13 +26,17 @@ import (
 //
 
 const Usage = `
+	./blockchain createBlockChain 地址 "创建区块链"
 	./blockchain printChain          打印区块链
 	./blockchain getBalance 地址      获取地址的余额
 	./blockchain send FROM TO AMOUNT MINER DATA "转账命令"
+	./blockchain createWallet "创建钱包"
+	./blockchain listAddresses "打印所有的钱包地址"
+	./blockchain printTx "打印所有交易"
 `
 
 type CLI struct {
-	bc *BlockChain
+	//bc *BlockChain //CLI中不需要保存区块链实例了，所有名字在自己调用之前，自己获取区块链实例
 }
 
 //给CLI提供一个方法，进行命令解析，从而执行调度
@@ -46,16 +50,16 @@ func (cli *CLI) Run() {
 	}
 
 	switch cmds[1] {
-	case "addBlock":
+	case "createBlockChain":
 		if len(cmds) != 3 {
 			fmt.Printf(Usage)
 			os.Exit(1)
 		}
 
-		fmt.Printf("添加区块命令被调用, 数据：%s\n", cmds[2])
+		fmt.Printf("创建区块链命令被调用!\n")
 
-		//data := cmds[2]
-		//cli.AddBlock(data) //TODO
+		addr := cmds[2]
+		cli.CreateBlockChain(addr)
 
 	case "printChain":
 		fmt.Printf("打印区块链命令被调用\n")
@@ -63,7 +67,7 @@ func (cli *CLI) Run() {
 
 	case "getBalance":
 		fmt.Printf("获取余额命令被调用\n")
-		cli.bc.GetBalance(cmds[2])
+		cli.GetBalance(cmds[2])
 
 	case "send":
 		fmt.Printf("转账命令被调用\n")
@@ -80,6 +84,17 @@ func (cli *CLI) Run() {
 		miner := cmds[5]
 		data := cmds[6]
 		cli.Send(from, to, amount, miner, data)
+	case "createWallet":
+		fmt.Printf("创建钱包命令被调用\n")
+		cli.CreateWallet()
+
+	case "listAddresses":
+		fmt.Printf("打印钱包地址命令被调用\n")
+		cli.ListAddresses()
+
+	case "printTx":
+		fmt.Printf("打印交易命令被调用\n")
+		cli.PrintTx()
 
 	default:
 		fmt.Printf("无效的命令，请检查\n")
